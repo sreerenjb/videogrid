@@ -1,7 +1,8 @@
-/* Taken from http://www.cs.cmu.edu/afs/cs/academic/class/15213-s00/www/class28/tiny.c
+/*
+ * Taken from http://www.cs.cmu.edu/afs/cs/academic/class/15213-s00/www/class28/tiny.c
  *
  * VideGridServer changes are added by:
- *   Sreerenj Balachandran  <bsreerenj@gmail.com> 
+ *   Sreerenj Balachandran  <bsreerenj@gmail.com>
  *
  * tiny.c - a minimal HTTP server that serves static and
  *          dynamic content with the GET method. Neither 
@@ -160,7 +161,29 @@ int main(int argc, char **argv) {
       printf("%s", buf);
     }
 
-    sprintf (filename,"print.sh");
+    /* parse the uri [crufty] */
+    if (!strstr(uri, "cgi-bin")) { /* static content */
+      is_static = 1;
+      strcpy(cgiargs, "");
+      strcpy(filename, ".");
+      strcat(filename, uri);
+      if (uri[strlen(uri)-1] == '/') 
+	strcat(filename, "index.html");
+    }
+    else { /* dynamic content */
+      is_static = 0;
+      printf ("dynamic \n");
+      p = index(uri, '?');
+      if (p) {
+	strcpy(cgiargs, p+1);
+	*p = '\0';
+      }
+      else {
+	strcpy(cgiargs, "");
+      }
+      strcpy(filename, ".");
+      strcat(filename, uri);
+    }
 
     /* make sure the file exists */
     if (stat(filename, &sbuf) < 0) {
@@ -171,48 +194,75 @@ int main(int argc, char **argv) {
       continue;
     }
 
-    /* make sure file is a regular executable file */
-    if (!(S_IFREG & sbuf.st_mode) || !(S_IXUSR & sbuf.st_mode)) {
+    /* serve static content */
+    if (is_static) {
+      if (strstr(filename, ".html"))
+	strcpy(filetype, "text/html");
+      else if (strstr(filename, ".gif"))
+	strcpy(filetype, "image/gif");
+      else if (strstr(filename, ".jpg"))
+	strcpy(filetype, "image/jpg");
+      else 
+	strcpy(filetype, "text/plain");
+
+      /* print response header */
+      fprintf(stream, "HTTP/1.1 200 OK\n");
+      fprintf(stream, "Server: Tiny Web Server\n");
+      fprintf(stream, "Content-length: %d\n", (int)sbuf.st_size);
+      fprintf(stream, "Content-type: %s\n", filetype);
+      fprintf(stream, "Access-Control-Allow-Origin: *\n");
+      fprintf(stream, "\r\n"); 
+      fflush(stream);
+
+      /* Use mmap to return arbitrary-sized response body */
+      fd = open(filename, O_RDONLY);
+      p = mmap(0, sbuf.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+      fwrite(p, 1, sbuf.st_size, stream);
+      munmap(p, sbuf.st_size);
+    }
+
+    /* serve dynamic content */
+    else {
+       printf ("filename %s \n",filename);	    
+      /* make sure file is a regular executable file */
+      if (!(S_IFREG & sbuf.st_mode) || !(S_IXUSR & sbuf.st_mode)) {
 	cerror(stream, filename, "403", "Forbidden", 
 	       "You are not allow to access this item");
 	fclose(stream);
 	close(childfd);
 	continue;
-    }
+      }
 
-    printf ("ExecuteableName = %s \n",filename);
-  
-    /* print first part of response header */
-    sprintf(buf, "HTTP/1.1 200 OK\n");
-    write(childfd, buf, strlen(buf));
-    sprintf(buf, "Server: Tiny Web Server\n");
-    write(childfd, buf, strlen(buf));
-    sprintf(buf, "Access-Control-Allow-Origin:*\n");
-    write(childfd, buf, strlen(buf));
-   
-   /* create and run the child CGI process so that all child
-      output to stdout and stderr goes back to the client via the
-      childfd socket descriptor */
-    pid = fork();
-    printf("pid %d \n",pid);
-    if (pid < 0) {
+      /* a real server would set other CGI environ vars as well*/
+      setenv("QUERY_STRING", cgiargs, 1); 
+
+      /* print first part of response header */
+      sprintf(buf, "HTTP/1.1 200 OK\n");
+      write(childfd, buf, strlen(buf));
+      sprintf(buf, "Server: Tiny Web Server\n");
+      write(childfd, buf, strlen(buf));
+      sprintf(buf, "Access-Control-Allow-Origin: *\n");
+      write(childfd, buf, strlen(buf));
+
+      /* create and run the child CGI process so that all child
+         output to stdout and stderr goes back to the client via the
+         childfd socket descriptor */
+      pid = fork();
+      if (pid < 0) {
 	perror("ERROR in fork");
 	exit(1);
-    }
-    else if (pid > 0) { /* parent process */
+      }
+      else if (pid > 0) { /* parent process */
 	wait(&wait_status);
-    }
-    else { /* child  process*/
-	printf ("\n");
+      }
+      else { /* child  process*/
 	close(0); /* close stdin */
-	printf ("\n");
 	dup2(childfd, 1); /* map socket to stdout */
-	printf ("\n");
 	dup2(childfd, 2); /* map socket to stderr */
-	printf ("initiate execeve \n");
 	if (execve(filename, NULL, environ) < 0) {
 	  perror("ERROR in execve");
 	}
+      }
     }
 
     /* clean up */
