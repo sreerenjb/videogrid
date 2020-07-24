@@ -1,0 +1,227 @@
+<html>
+  <style>
+    .container {
+      height: 100px;
+      position: relative;
+      border: 5px solid green;
+      margin-top: 20px;
+      margin-left: 20px
+    }
+
+    .row1 {
+      margin-top: 10px;
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+    }
+
+    .row2 {
+      height: 100px;
+      position: relative;
+      border: 5px solid purple;
+      margin-top: 20px;
+      margin-left: 20px;
+      overflow: auto;
+      display: flex;
+      flex-direction: column-reverse;
+    }
+
+    .row3 {
+      height: 600px;
+      border: 5px solid purple;
+      margin-top: 20px;
+      margin-left: 20px;
+      overflow: auto;
+      flex-direction: column;
+    }
+
+    .select {
+      width:200px;
+      height:50px;
+    }
+
+    .button {
+      width:200px;
+      height:50px;
+    }
+
+  </style>
+
+  <div class="container">
+
+    <div class="row1">
+      <div style="margin-right: 5px; width: 250px;">
+        <p> Select the Number of Channels </p>
+      </div>
+
+      <div style="margin-right: 40px">
+      <select  class="select" id="Channels" name="ChooseChannel">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="4">4</option>
+        <option value="8">8</option>
+        <option value="16">16</option>
+        <option value="32">32</option>
+        <option value="48">48</option>
+        <option value="64">64</option>
+        <option value="80">80</option>
+        <option value="96">96</option>
+        <option value="100">100</option>
+        <option value="112">112</option>
+        <option value="128">128</option>
+        <option value="144">144</option>
+        <option value="200">200</option>
+        <option value="300">300</option>
+        <option value="400">400</option>
+        <option value="500">500</option>
+      </select>
+      </div>
+
+      <div style="margin-right: 5px; width: 150px">
+      <p> Select the Resolution </p>
+      </div>
+
+      <div style="margin-right: 5px; width: 1000px">
+      <select class="select" id="Resolution" name="ChooseResolution">
+        <option value="320x240">QVGA</option>
+        <option value="640x480">VGA</option>
+        <option value="1280x720">HD</option>
+        <option value="1920x1080">FullHD</option>
+        <option value="3840x2160">4K</option>
+      </select>
+      </div>
+
+      <div style="margin-right: 5px width: 150px">
+      <button  class="button" id="playbutton" style="margin:5px; background-color:green;">Play</button>
+      </div>
+
+      <div style="margin-right: 5px width: 150px">
+      <button  class="button" id="pausebutton" style="margin:5px; background-color:green;">Pause</button>
+      </div>
+
+      <div style="margin-right: 5px width: 150px">
+      <button  class="button" id="statusbutton" style="margin:5px; background-color:green;">Status</button>
+      </div>
+
+    </div>
+
+    <div class="row2">
+      <p id = "resultbox"> </p>
+    </div>
+    <div class="row3" id="videogrid">
+    </div>
+  </div>
+
+</html>
+
+<script>
+  const videoElements = [];
+  var NumOfPlayingChannels = 0;
+
+  let playButton = document.getElementById("playbutton");
+  let pauseButton = document.getElementById("pausebutton");
+  let statusButton = document.getElementById("statusbutton");
+  
+  playButton.addEventListener("click", handlePlayButton, false);
+  pauseButton.addEventListener("click", handlePauseButton, false);
+  statusButton.addEventListener("click", handleStatusButton, false);
+
+  function handlePlayButton() {
+      playVideo();
+  }
+
+  function handlePauseButton() {
+      if (videoElements.length)
+          videoElements.forEach (pauseGrid);
+  }
+
+  async function playVideo() {
+      var e = document.getElementById("Channels");
+      var value = e.options[e.selectedIndex].value;
+
+      console.log ("NumOfPlayingChannels",NumOfPlayingChannels);
+
+      if (NumOfPlayingChannels != value) {
+	  NumOfPlayingChannels = value;
+          //delete exisiting video grid tiles
+          deleteVideoGrid();
+          //create new
+          createVideoGrid(NumOfPlayingChannels);
+      } else if (videoElements.length && !videoElements[0].paused) {
+	  console.log("continuous play click, do nothing");
+	  return false;
+      }
+
+      videoElements.forEach (playGrid);
+  }
+
+  function deleteVideoGrid () {
+      console.log ("NumofElementsToDelte", videoElements.length);
+      if (videoElements.length) {
+	  videoElements.forEach (deleteVideoElement);
+	  videoElements.length = 0;
+      }
+  }
+
+  function deleteVideoElement (element, index) {
+      element.pause(); 
+      element.parentNode.removeChild(element);
+  }
+
+  function createVideoGrid (num_channels) {
+    var i;
+    for(i=0;i<num_channels;i++) {
+      var videoGridElem = document.getElementById("videogrid");
+      var videoElem;
+      videoElem = document.createElement("VIDEO");
+      if (videoElem.canPlayType("video/mp4")) {
+           //videoElem.setAttribute("src","http://sree.srbits.net:8086/Fantastic_320_240_512kb.mp4");
+	   videoElem.setAttribute("src","samples/Fantastic_320_240_512kb.mp4");
+      }
+      //Fixme: webm/x-vp9 is not getting diplayed more than 7 times!!!!!
+      //videoElem.setAttribute("src","http://sree.srbits.net:8086/Movie_320p_512kbps_vp9.mp4");
+      //videoElem.setAttribute("src","http://sree.srbits.net:8086/Fantastic_320_240_512kb.mp4");
+      videoElem.setAttribute("width", "320");
+      videoElem.setAttribute("height", "240");
+      videoElem.pause();
+     //document.body.appendChild(videoElem);
+      videoGridElem.appendChild(videoElem);
+      videoElements.push (videoElem);
+    }
+  }
+
+  async function playGrid(item, index) {
+      try {
+        var videoElem = item;
+        await videoElem.play();
+        playButton.classList.add("playing");
+      } catch(err) {
+        playButton.classList.remove("playing");
+      }
+  }
+
+  function pauseGrid(videoElem, index) {
+    if (!videoElem.paused) {
+      videoElem.pause();
+      playButton.classList.remove("playing");
+    }
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  async function handleStatusButton() {
+    console.log ("HandleStatusButton");
+    var xhttp = new XMLHttpRequest();
+    xhttp.open("GET", "http://localhost:8082/webserver/cgi-bin/hwusage.sh", true);
+    xhttp.responseType = 'text';
+    xhttp.send(null);
+    while (1) {
+      await sleep(2000);
+      document.getElementById("resultbox").innerHTML = xhttp.response;
+    } 
+  }
+
+</script>
