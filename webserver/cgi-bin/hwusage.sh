@@ -1,8 +1,8 @@
 #!/bin/bash
 echo "Content-type: text/html"
 ROOT_DIR=`pwd`
-cd $ROOT_DIR
+cd $ROOT_DIR/webserver/cgi-bin/
 echo
-./webserver/cgi-bin/metrics_monitor
+./metrics_monitor
 print "\n\t"
 echo
