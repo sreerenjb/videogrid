@@ -12,13 +12,25 @@ Currently the benchmarking works only for the Intel hardware.
 
 ### Linux
 
-sudo ./run-linux.sh
+sudo ./run.sh
 
 Open the "videogrid.html" on a browser, select the number of parallel streams
 to be decoded & displayed, click the Play button.
 
 To get the Hardware usage, click on Status button.
 
+### ChromeOS
+
+Download videogrid project to /home/chronos/user/Downloads
+
+sudo mount /home/chronos/user -o remount,exec
+
+sudo ./run.sh
+
+Open the "videogrid.html" on a browser, select the number of parallel streams
+to be decoded & displayed, click the Play button.
+
+To get the Hardware usage, click on Status button.
 
 ## Design & Components
 
