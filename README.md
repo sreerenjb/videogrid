@@ -41,3 +41,7 @@ The videogrid project has 3 major components
 2) A modified version of tiny web server taken from http://www.cs.cmu.edu/afs/cs/academic/class/15213-s00/www/class28/tiny.c (webserver/videogrid_server.c)
 
 3) Metrics montior lib & binary derived from Intel's MediaSDK project https://github.com/Intel-Media-SDK/MediaSDK/tree/master/samples/metrics_monitor (webserver/msdk_components/libcttmetrics.so  & webserver/msdk_components/metrics_monitor)
+
+### Screen shot of videogrid
+
+![videogrid_screen_shot](samples/VideoGrid.png)
